@@ -6,7 +6,20 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # non-zero exit patch returns when skipping)
 cd /root/lichee/lichee/linux-4.9
 patch -N -p1 < "$SCRIPT_DIR/patches/0001-feat-support-disp2-fb-hw-rotate.patch" || true
-patch -N -p1 < "$SCRIPT_DIR/patches/0002-zero28-g2d-90-270-rot-fix.patch" || true
+# Zero28 90/270 rotation fixes (applied as sed/python — 0002 patch context mismatches BSP output)
+FB_G2D="/root/lichee/lichee/linux-4.9/drivers/video/fbdev/sunxi/disp2/disp/fb_g2d_rot.c"
+DEV_FB="/root/lichee/lichee/linux-4.9/drivers/video/fbdev/sunxi/disp2/disp/dev_fb.c"
+sed -i '72s/dst_image_h\.width;/dst_image_h.height;/' "$FB_G2D"
+sed -i '74s/dst_image_h\.height;/dst_image_h.width;/' "$FB_G2D"
+sed -i 's/FB_ROTATION_HW_0 && degree > FB_ROTATION_HW_270/FB_ROTATION_HW_0 || degree > FB_ROTATION_HW_270/' "$FB_G2D"
+python3 -c "
+fname = '$DEV_FB'
+with open(fname) as f: c = f.read()
+if 'degree_int == 1 || degree_int == 3' in c: exit(0)
+block = '#if defined(CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT)\n\tif (degree_int == 1 || degree_int == 3) {\n\t\tint tmp = dst_width;\n\t\tdst_width = dst_height;\n\t\tdst_height = tmp;\n\t}\n#endif\n\n'
+target = '\tif (degree_int == 2) { /* copy with rotate 180 */'
+with open(fname, 'w') as f: f.write(c.replace(target, block + target, 1))
+"
 
 cd /root/lichee/lichee/brandy-2.0/u-boot-2018
 patch -N -p1 < "$SCRIPT_DIR/patches/0001-feat-support-fb-bootlogo-rotate.patch" || true
