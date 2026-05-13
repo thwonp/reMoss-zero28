@@ -3,6 +3,7 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 ENV LANG=C.UTF-8
+ENV FORCE_UNSAFE_CONFIGURE=1
 
 RUN apt-get update && apt-get install -y \
     # Core build tools
