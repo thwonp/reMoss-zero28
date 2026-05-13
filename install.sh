@@ -26,6 +26,11 @@ patch -N -p1 < "$SCRIPT_DIR/patches/0001-feat-support-fb-bootlogo-rotate.patch" 
 
 cd "$SCRIPT_DIR"
 
+# Fix ffmpeg: remove Allwinner ISP camera deps (libAWIspApi disabled; not needed for playback)
+FFMPEG_MK="/root/lichee/package/multimedia/ffmpeg/Makefile"
+sed -i 's/ -lisp -lisp_ini -lAWIspApi//' "$FFMPEG_MK"
+sed -i 's/ +libAWIspApi//' "$FFMPEG_MK"
+
 # Fix netifd build failure under GCC 7 (-Werror=format-truncation on old snprintf code)
 NETIFD_MK="/root/lichee/package/network/config/netifd/Makefile"
 grep -q "Wno-error=format-truncation" "$NETIFD_MK" || \
