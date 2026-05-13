@@ -6,7 +6,8 @@ ENV LANG=C.UTF-8
 ENV FORCE_UNSAFE_CONFIGURE=1
 ENV PATH="/root/lichee/lichee/arisc/ar100s/tools/toolchain/bin:${PATH}"
 
-RUN apt-get update && apt-get install -y \
+RUN dpkg --add-architecture i386 && apt-get update && apt-get install -y \
+    lib32z1 lib32stdc++6 \
     # Core build tools
     build-essential gcc g++ make cmake file \
     # Kernel / u-boot build
