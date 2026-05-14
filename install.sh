@@ -80,6 +80,20 @@ EOF
     echo "Patched board defconfig: Phase II toolchain (GCC 7.4.1, binutils 2.28, glibc 2.29)"
 fi
 
+# Fix fontconfig 2.12.1: FC_OBJECT(CHAR_WIDTH,...,NULL) generates PRI_CHAR_WIDTH_STRONG/WEAK via the
+# dummy enum but they are absent from the real FcMatcherPriority enum; GCC 7 rejects the reference
+# in the static struct initializer. Patch adds PRI1(CHAR_WIDTH) to the real enum.
+python3 -c "
+import os
+d = '/root/lichee/package/utils/fontconfig/patches'
+p = os.path.join(d, '001-fix-char-width-priority-gcc7.patch')
+if os.path.exists(p): exit(0)
+os.makedirs(d, exist_ok=True)
+with open(p, 'w') as f:
+    f.write('--- a/src/fcmatch.c\n+++ b/src/fcmatch.c\n@@ -300,6 +300,7 @@ typedef enum _FcMatcherPriority {\n     PRI1(SLANT),\n     PRI1(WEIGHT),\n     PRI1(WIDTH),\n+    PRI1(CHAR_WIDTH),\n     PRI1(DECORATIVE),\n     PRI1(ANTIALIAS),\n     PRI1(RASTERIZER),\n')
+"
+rm -rf /root/lichee/out/a133-aw3/compile_dir/target/fontconfig-2.12.1
+
 # Remove packages that fail to build under glibc 2.29 and are not needed on Zero28
 rm -rf /root/lichee/package/allwinner/camerademo                        # libisp.so references major()/minor() absent from glibc 2.29
 rm -rf /root/lichee/package/allwinner/resample                          # libc.so missing dependency; libsamplerate covers this
