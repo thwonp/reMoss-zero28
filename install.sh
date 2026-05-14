@@ -109,6 +109,10 @@ grep -q 'TARGET_CFLAGS.*Wno-error=format-truncation' "$CEDAR_MK" || \
 # Flag must be in CPPFLAGS because libcedarx is compiled as C++ (CXX) not C
 grep -q 'TARGET_CPPFLAGS.*Wno-error=nonnull' "$CEDAR_MK" || \
     sed -i 's/CPPFLAGS="\$(TARGET_CPPFLAGS) -D__ENABLE_ZLIB__  -D\$(TINA_CHIP_TYPE)/CPPFLAGS="$(TARGET_CPPFLAGS) -Wno-error=nonnull -D__ENABLE_ZLIB__  -D$(TINA_CHIP_TYPE)/' "$CEDAR_MK"
+# libcedarx: fix -Werror=format-truncation in CdxMp4MuxerLib.c (GCC 7 snprintf truncation check)
+# Covers both libcedarx full and audio-only make targets (both use TINA_CHIP_TYPE in CFLAGS)
+grep -q 'TINA_CHIP_TYPE.*Wno-error=format-truncation\|Wno-error=format-truncation.*TINA_CHIP_TYPE' "$CEDAR_MK" || \
+    sed -i 's/CFLAGS="\$(TARGET_CFLAGS) -D__ENABLE_ZLIB__ -D\$(TINA_CHIP_TYPE)/CFLAGS="$(TARGET_CFLAGS) -Wno-error=format-truncation -D__ENABLE_ZLIB__ -D$(TINA_CHIP_TYPE)/g' "$CEDAR_MK"
 
 # Fix e2fsprogs build failure under glibc 2.29 (makedev/major removed from sys/types.h)
 E2FS_MK="/root/lichee/package/utils/e2fsprogs/Makefile"
