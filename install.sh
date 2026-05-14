@@ -96,10 +96,15 @@ NETIFD_MK="/root/lichee/package/network/config/netifd/Makefile"
 grep -q "Wno-error=format-truncation" "$NETIFD_MK" || \
     sed -i '/^CMAKE_OPTIONS/i TARGET_CFLAGS += -Wno-error=format-truncation\n' "$NETIFD_MK"
 
-# Fix libcedarx/libcedarc build failure under GCC 7 (-Werror=format-truncation in vencoderDemo)
+# Fix libcedarx/libcedarc build failure under GCC 7 (-Werror=format-truncation in vencoderDemo).
+# Two patches needed: configure-time CFLAGS and make-time CFLAGS.  The Build/Compile rule
+# passes its own CFLAGS= to $(MAKE) which overrides whatever configure baked into the
+# generated Makefile, so both lines must carry the flag.
 CEDAR_MK="/root/lichee/package/allwinner/tina_multimedia/Makefile"
-grep -q "Wno-error=format-truncation" "$CEDAR_MK" || \
+grep -q 'ENABLE_ZLIB__.*Wno-error=format-truncation' "$CEDAR_MK" || \
     sed -i 's/CFLAGS="-D__ENABLE_ZLIB__ -D\$(VE_OFFSET)/CFLAGS="-D__ENABLE_ZLIB__ -Wno-error=format-truncation -D$(VE_OFFSET)/' "$CEDAR_MK"
+grep -q 'TARGET_CFLAGS.*Wno-error=format-truncation' "$CEDAR_MK" || \
+    sed -i 's/CFLAGS="\$(TARGET_CFLAGS) -D__ENABLE_ZLIB__ -D\$(VE_OFFSET)/CFLAGS="$(TARGET_CFLAGS) -Wno-error=format-truncation -D__ENABLE_ZLIB__ -D$(VE_OFFSET)/' "$CEDAR_MK"
 
 # Fix e2fsprogs build failure under glibc 2.29 (makedev/major removed from sys/types.h)
 E2FS_MK="/root/lichee/package/utils/e2fsprogs/Makefile"
