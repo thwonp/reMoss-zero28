@@ -105,6 +105,10 @@ grep -q 'ENABLE_ZLIB__.*Wno-error=format-truncation' "$CEDAR_MK" || \
     sed -i 's/CFLAGS="-D__ENABLE_ZLIB__ -D\$(VE_OFFSET)/CFLAGS="-D__ENABLE_ZLIB__ -Wno-error=format-truncation -D$(VE_OFFSET)/' "$CEDAR_MK"
 grep -q 'TARGET_CFLAGS.*Wno-error=format-truncation' "$CEDAR_MK" || \
     sed -i 's/CFLAGS="\$(TARGET_CFLAGS) -D__ENABLE_ZLIB__ -D\$(VE_OFFSET)/CFLAGS="$(TARGET_CFLAGS) -Wno-error=format-truncation -D__ENABLE_ZLIB__ -D$(VE_OFFSET)/' "$CEDAR_MK"
+# libcedarx: fix -Werror=nonnull in CdxRtspStream.cpp (GCC 7 null-arg-to-memcpy check)
+# Flag must be in CPPFLAGS because libcedarx is compiled as C++ (CXX) not C
+grep -q 'TARGET_CPPFLAGS.*Wno-error=nonnull' "$CEDAR_MK" || \
+    sed -i 's/CPPFLAGS="\$(TARGET_CPPFLAGS) -D__ENABLE_ZLIB__  -D\$(TINA_CHIP_TYPE)/CPPFLAGS="$(TARGET_CPPFLAGS) -Wno-error=nonnull -D__ENABLE_ZLIB__  -D$(TINA_CHIP_TYPE)/' "$CEDAR_MK"
 
 # Fix e2fsprogs build failure under glibc 2.29 (makedev/major removed from sys/types.h)
 E2FS_MK="/root/lichee/package/utils/e2fsprogs/Makefile"
