@@ -76,4 +76,7 @@ fi
 
 echo "SDK ready. To build:"
 echo "  1. $ASSETS/build-env.sh"
-echo "  2. Inside the container: bash /root/workspace/assets/build-inner.sh"
+echo "  2. Inside the container:"
+echo "       cd /root/lichee"
+echo "       source build/envsetup.sh && lunch   # select 3 (a133_aw3-tina)"
+echo "       . /root/workspace/assets/build-inner.sh"
