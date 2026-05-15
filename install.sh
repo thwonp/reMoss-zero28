@@ -80,6 +80,30 @@ EOF
     echo "Patched board defconfig: Phase II toolchain (GCC 7.4.1, binutils 2.28, glibc 2.29)"
 fi
 
+# Sync board defconfig with phase3-complete.config for all package/config settings.
+# set-config.sh alone is insufficient: Tina's toplevel.mk .config rule unconditionally
+# copies the board defconfig over .config at the start of every make invocation
+# (elif TARGET_BUILD_VARIANT=tina branch). The board defconfig is the true source of
+# truth. For each key in phase3-complete.config, strip the existing value from the
+# board defconfig and re-append the desired value. Board-specific keys absent from
+# phase3-complete.config are left untouched.
+DESIRED="/root/workspace/assets/configs/phase3-complete.config"
+TMPSCRIPT=$(mktemp)
+while IFS= read -r line; do
+    if [[ "$line" =~ ^(CONFIG_[^=]+)= ]]; then
+        key="${BASH_REMATCH[1]}"
+    elif [[ "$line" =~ ^#\ (CONFIG_[^[:space:]]+)\ is\ not\ set ]]; then
+        key="${BASH_REMATCH[1]}"
+    else
+        continue
+    fi
+    printf '/^%s=/d\n/^# %s is not set$/d\n' "$key" "$key"
+done < "$DESIRED" > "$TMPSCRIPT"
+sed -i -f "$TMPSCRIPT" "$DEFCONFIG"
+rm "$TMPSCRIPT"
+grep -E '^(CONFIG_|# CONFIG_)' "$DESIRED" >> "$DEFCONFIG"
+echo '[install.sh] Synced board defconfig with phase3-complete.config'
+
 # Fix fontconfig 2.12.1: FC_OBJECT(CHAR_WIDTH,...,NULL) generates PRI_CHAR_WIDTH_STRONG/WEAK via the
 # dummy enum but they are absent from the real FcMatcherPriority enum; GCC 7 rejects the reference
 # in the static struct initializer. Patch adds PRI1(CHAR_WIDTH) to the real enum.
@@ -128,6 +152,13 @@ grep -q 'TARGET_CPPFLAGS.*Wno-error=nonnull' "$CEDAR_MK" || \
 # Covers both libcedarx full and audio-only make targets (both use TINA_CHIP_TYPE in CFLAGS)
 grep -q 'TINA_CHIP_TYPE.*Wno-error=format-truncation\|Wno-error=format-truncation.*TINA_CHIP_TYPE' "$CEDAR_MK" || \
     sed -i 's/CFLAGS="\$(TARGET_CFLAGS) -D__ENABLE_ZLIB__ -D\$(TINA_CHIP_TYPE)/CFLAGS="$(TARGET_CFLAGS) -Wno-error=format-truncation -D__ENABLE_ZLIB__ -D$(TINA_CHIP_TYPE)/g' "$CEDAR_MK"
+
+# Fix cairo 1.14.6: pthreads configure detection fails under GCC 7 cross-compile;
+# CAIRO_NO_MUTEX=1 disables thread-safety (single-process embedded device; acceptable).
+CAIRO_MK="/root/lichee/package/gui/libs/cairo/Makefile"
+grep -q 'CAIRO_NO_MUTEX' "$CAIRO_MK" || \
+    sed -i 's/^TARGET_CFLAGS += \$(FPIC)$/TARGET_CFLAGS += $(FPIC) -DCAIRO_NO_MUTEX=1/' "$CAIRO_MK"
+rm -rf /root/lichee/out/a133-aw3/compile_dir/target/cairo-1.14.6
 
 # Fix e2fsprogs build failure under glibc 2.29 (makedev/major removed from sys/types.h)
 E2FS_MK="/root/lichee/package/utils/e2fsprogs/Makefile"
