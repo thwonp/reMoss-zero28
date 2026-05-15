@@ -92,8 +92,7 @@ bash /root/workspace/assets/set-config.sh
 echo "[build-inner.sh] Verifying toolchain in .config after set-config ..."
 grep 'CONFIG_GCC_VERSION=' .config | head -1
 
-echo "[build-inner.sh] Starting build ..."
-make -j$(nproc)
-
-add-rootfs-demo && pack
+echo ""
+echo "Build environment ready. Run:"
+echo "  make -j\$(nproc) && add-rootfs-demo && pack"
 )
