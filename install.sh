@@ -185,20 +185,43 @@ rm -rf /root/lichee/package/thirdparty/duilite-lib \
 PART_FEX="/root/lichee/device/config/chips/a133/configs/aw3/linux/sys_partition.fex"
 sed -i '/name.*=.*bootloader/{n;s/size\s*=\s*512/size         = 2048/}' "$PART_FEX"
 
-# board.dts: enable 90° HW rotation for portrait 480×640 panel → logical landscape 640×480
+# board.dts: enable HW rotation — degree0=1 (90° CW sweep test; DE2 target landscape)
 DTS="/root/lichee/device/config/chips/a133/configs/aw3/board.dts"
-sed -i 's/fb0_width\s*=\s*<480>/fb0_width               = <640>/' "$DTS"
-sed -i 's/fb0_height\s*=\s*<640>/fb0_height              = <480>/' "$DTS"
 grep -q "degree0" "$DTS" || \
-    sed -i '/fb0_height\s*=\s*<480>/a \\t\t\tdisp_rotation_used       = <1>;\n\t\t\tdegree0                  = <3>;' "$DTS"
+    sed -i '/fb0_height\s*=\s*<640>/a \\t\t\tdisp_rotation_used       = <1>;\n\t\t\tdegree0                  = <1>;\n\t\t\tfb0_buffer_num           = <2>;' "$DTS"
+sed -i 's/degree0\s*=\s*<[0-9]*>;/degree0                  = <1>;/' "$DTS"
+grep -Eq 'degree0[[:space:]]*=[[:space:]]*<1>;' "$DTS" || { echo "ERROR: degree0=<1> not set in $DTS after sed"; exit 1; }
+grep -q "fb0_buffer_num" "$DTS" || \
+    sed -i '/degree0\s*=\s*<[0-9]*>;/a \\t\t\tfb0_buffer_num           = <2>;' "$DTS"
+grep -Eq 'fb0_buffer_num[[:space:]]*=[[:space:]]*<2>;' "$DTS" || \
+    { echo "ERROR: fb0_buffer_num=<2> not set in $DTS after sed"; exit 1; }
 
-# Kernel defconfig additions (idempotent guards)
+# Kernel board config — source kconfig.pl reads to generate linux-4.9/.config
+# The arch defconfig (sun50iw10p1smp_defconfig) is NOT used by the Tina build.
+BCONFIG="/root/lichee/device/config/chips/a133/configs/aw3/linux/config-4.9"
+sed -i '/^# CONFIG_SUNXI_G2D is not set$/d'                                   "$BCONFIG"
+sed -i '/^CONFIG_SUNXI_DISP2_FB_DISABLE_ROTATE=y$/d'                          "$BCONFIG"
+sed -i '/^# CONFIG_SUNXI_DISP2_FB_ROTATION_SUPPORT is not set$/d'             "$BCONFIG"
+grep -q "CONFIG_SUNXI_G2D=y"                           "$BCONFIG" || echo "CONFIG_SUNXI_G2D=y"                           >> "$BCONFIG"
+grep -q "CONFIG_SUNXI_G2D_ROTATE=y"                    "$BCONFIG" || echo "CONFIG_SUNXI_G2D_ROTATE=y"                    >> "$BCONFIG"
+grep -q "CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y" "$BCONFIG" || echo "CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y" >> "$BCONFIG"
 DEF="/root/lichee/lichee/linux-4.9/arch/arm64/configs/sun50iw10p1smp_defconfig"
-grep -q "SUNXI_DISP2_FB_HW_ROTATION_SUPPORT" "$DEF" || echo "CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y"  >> "$DEF"
 grep -q "CONFIG_NLS_ISO8859_1"               "$DEF" || echo "CONFIG_NLS_ISO8859_1=y"                        >> "$DEF"
 grep -q "CONFIG_NLS_UTF8"                    "$DEF" || echo "CONFIG_NLS_UTF8=y"                             >> "$DEF"
 grep -q "CONFIG_FAT_DEFAULT_IOCHARSET"       "$DEF" || echo 'CONFIG_FAT_DEFAULT_IOCHARSET="utf8"'           >> "$DEF"
 grep -q "CONFIG_VIDEO_SUNXI_VIN"             "$DEF" || echo "# CONFIG_VIDEO_SUNXI_VIN is not set"           >> "$DEF"
+
+# Kernel .config — patch directly for incremental builds (reuse existing .config, skip defconfig)
+KCONFIG="/root/lichee/lichee/linux-4.9/.config"
+SCRIPTS_CONFIG="/root/lichee/lichee/linux-4.9/scripts/config"
+if [ -f "$KCONFIG" ] && [ -x "$SCRIPTS_CONFIG" ]; then
+    "$SCRIPTS_CONFIG" --file "$KCONFIG" \
+        --disable SUNXI_DISP2_FB_DISABLE_ROTATE \
+        --enable  SUNXI_G2D \
+        --enable  SUNXI_G2D_ROTATE \
+        --enable  SUNXI_DISP2_FB_HW_ROTATION_SUPPORT
+    echo "[install.sh] Patched kernel .config via scripts/config"
+fi
 
 cp bootlogo.bmp /root/lichee/target/allwinner/generic/boot-resource/boot-resource/
 

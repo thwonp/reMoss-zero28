@@ -61,14 +61,17 @@ grep -q 'degree0' device/config/chips/a133/configs/aw3/board.dts \
 grep -q 'disp_rotation_used' device/config/chips/a133/configs/aw3/board.dts \
     && _ok "DTS: disp_rotation_used present" \
     || _fail "DTS: disp_rotation_used missing"
-grep -q 'fb0_width.*640' device/config/chips/a133/configs/aw3/board.dts \
-    && _ok "DTS: fb0_width=640" \
-    || _fail "DTS: fb0_width not 640"
+grep -q 'fb0_width.*480' device/config/chips/a133/configs/aw3/board.dts \
+    && _ok "DTS: fb0_width=480 (portrait)" \
+    || _fail "DTS: fb0_width not 480"
 
-# Kernel defconfig: HW rotation support
-grep -q 'SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y' lichee/linux-4.9/arch/arm64/configs/sun50iw10p1smp_defconfig \
-    && _ok "Kernel defconfig: HW rotation enabled" \
-    || _fail "Kernel defconfig: HW rotation missing"
+# Kernel board config: G2D + HW rotation (device/config/chips/a133/configs/aw3/linux/config-4.9)
+grep -q 'CONFIG_SUNXI_G2D=y' device/config/chips/a133/configs/aw3/linux/config-4.9 \
+    && _ok "Kernel board config: CONFIG_SUNXI_G2D enabled" \
+    || _fail "Kernel board config: CONFIG_SUNXI_G2D missing"
+grep -q 'CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y' device/config/chips/a133/configs/aw3/linux/config-4.9 \
+    && _ok "Kernel board config: HW rotation enabled" \
+    || _fail "Kernel board config: HW rotation missing"
 
 # Kernel source: dev_fb.c 90/270 dimension swap
 grep -q 'degree_int == 1 || degree_int == 3' lichee/linux-4.9/drivers/video/fbdev/sunxi/disp2/disp/dev_fb.c \
