@@ -229,9 +229,11 @@ grep -q "CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y" "$BCONFIG" || echo "CONFIG
 # XR829 WiFi — built-in (SDIO bus); sub-symbols invisible in config-4.9 while gate is disabled
 sed -i '/^# CONFIG_XR829_WLAN is not set$/d'  "$BCONFIG"
 grep -q "CONFIG_XR829_WLAN=y"  "$BCONFIG" || echo "CONFIG_XR829_WLAN=y"  >> "$BCONFIG"
-grep -q "CONFIG_XRADIO=y"      "$BCONFIG" || echo "CONFIG_XRADIO=y"      >> "$BCONFIG"
+sed -i 's/^CONFIG_XRADIO=y$/CONFIG_XRADIO=m/' "$BCONFIG"
+sed -i 's/^CONFIG_XRMAC=y$/CONFIG_XRMAC=m/'   "$BCONFIG"
+grep -q "CONFIG_XRADIO=" "$BCONFIG" || echo "CONFIG_XRADIO=m" >> "$BCONFIG"
 grep -q "CONFIG_XRADIO_SDIO=y" "$BCONFIG" || echo "CONFIG_XRADIO_SDIO=y" >> "$BCONFIG"
-grep -q "CONFIG_XRMAC=y"       "$BCONFIG" || echo "CONFIG_XRMAC=y"       >> "$BCONFIG"
+grep -q "CONFIG_XRMAC="  "$BCONFIG" || echo "CONFIG_XRMAC=m"  >> "$BCONFIG"
 DEF="/root/lichee/lichee/linux-4.9/arch/arm64/configs/sun50iw10p1smp_defconfig"
 grep -q "CONFIG_NLS_ISO8859_1"               "$DEF" || echo "CONFIG_NLS_ISO8859_1=y"                        >> "$DEF"
 grep -q "CONFIG_NLS_UTF8"                    "$DEF" || echo "CONFIG_NLS_UTF8=y"                             >> "$DEF"
@@ -248,9 +250,9 @@ if [ -f "$KCONFIG" ] && [ -x "$SCRIPTS_CONFIG" ]; then
         --enable  SUNXI_G2D_ROTATE \
         --enable  SUNXI_DISP2_FB_HW_ROTATION_SUPPORT \
         --enable  XR829_WLAN \
-        --enable  XRADIO \
+        --module  XRADIO \
         --enable  XRADIO_SDIO \
-        --enable  XRMAC
+        --module  XRMAC
     echo "[install.sh] Patched kernel .config via scripts/config"
 fi
 
