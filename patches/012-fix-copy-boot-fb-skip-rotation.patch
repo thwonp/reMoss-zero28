@@ -1,0 +1,13 @@
+--- a/drivers/video/fbdev/sunxi/disp2/disp/dev_fb.c
++++ b/drivers/video/fbdev/sunxi/disp2/disp/dev_fb.c
+@@ -1679,6 +1679,10 @@
+ 	src_addr += map_offset;
+ 
+ 	degree_int = fb_get_rot_degree(0);
++	if (degree_int != 0) {
++		Fb_unmap_kernel(map_addr);
++		return 0;
++	}
+ /*
+ 	pr_warn("cpu_copy boot_fb para: src[phy_addr=%p,w=%d,h=%d,bpp=%d,stride=%d, src_crop=[%d, %d, %d, %d]\
+ 			dst[addr=%p,w=%d,h=%d,bpp=%d,stride=%d], degree_int=%d\n",
