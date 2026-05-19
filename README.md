@@ -49,6 +49,12 @@ cp "$SDK_ROT/zero28-patch/a133_g2d_90_270_rot.patch" \
 
 cp "$SDK_ROT/a133-tina-bsp-update-2025-10-11/lichee/brandy-2.0/u-boot-2018/"0001-*.patch \
    patches/
+
+# Three custom patches must also be present before building.
+# These are not included in the SDK or this repository:
+#   patches/006-lazy-g2d-open.patch
+#   patches/008-remove-init-apply.patch
+#   patches/012-fix-copy-boot-fb-skip-rotation.patch
 ```
 
 ---

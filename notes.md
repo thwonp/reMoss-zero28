@@ -60,16 +60,34 @@ install.sh is safe to re-run (all edits are guarded). It applies:
 - `0001-feat-support-disp2-fb-hw-rotate.patch` — disp2 framebuffer HW rotation support
 - `0001-feat-support-fb-bootlogo-rotate.patch` — u-boot boot logo rotation (already present in stock SDK; patch is a no-op but harmless)
 - `0002-zero28-g2d-90-270-rot-fix.patch` — applied as sed/python (patch context mismatches BSP output)
+- `006-lazy-g2d-open.patch` — moves g2d_open() into fb_g2d_rot_apply() (lazy open);
+  fixes fb_g2d_rot_free() to only release if opened; corrects clip_rect w/h swap
+- `008-remove-init-apply.patch` — removes the init-time fb_g2d_rot apply() call from
+  display_fb_request() in dev_fb.c; apply() is correctly called per-frame from fb_pan_display()
+- `012-fix-copy-boot-fb-skip-rotation.patch` — skips the CPU rotation copy in
+  Fb_copy_boot_fb() when degree_int != 0; with G2D active the copy is redundant and hangs
 - `dev_fb.c` dimension swap for 90°/270° G2D blits
 - `fb_g2d_rot.c` width/height swap and rotation direction fix
 
-**DTS edits** (`device/config/chips/a133/configs/aw3/board.dts`)
-- `fb0_width = <640>`, `fb0_height = <480>` (logical landscape dimensions)
-- `disp_rotation_used = <1>`, `degree0 = <3>` (90° CW hardware rotation)
+All patches are applied via the `apply_patch()` helper (defined in install.sh): dry-runs
+first; prints INFO and skips if already applied; prints WARN and applies if hunks fail;
+applies cleanly otherwise. Replaces the old `patch -N -p1 < ... || true` pattern.
 
-**Kernel defconfig** (`sun50iw10p1smp_defconfig`)
+**DTS edits** (`device/config/chips/a133/configs/aw3/board.dts`)
+- `disp_rotation_used = <1>`, `degree0 = <1>` (90° CW hardware rotation)
+
+**Kernel defconfig** (`sun50iw10p1smp_defconfig`) — Note: the arch defconfig is NOT the
+active path under Tina; the real sources of truth are `config-4.9` (clean builds) and
+`scripts/config` (incremental). The arch defconfig is also patched but is unused by the
+Tina build system.
 - `CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y`
 - NLS ISO 8859-1, NLS UTF-8, FAT default iocharset=utf8
+
+**XR829 WiFi kernel config** (`config-4.9` + `scripts/config`)
+- `CONFIG_XR829_WLAN=y` — top-level gate (bool, stays built-in)
+- `CONFIG_XRADIO=m` — SDIO driver as module (=y conflicts with built-in mac80211)
+- `CONFIG_XRMAC=m` — XRMAC is a mac80211 fork; both =y causes ieee80211_* linker errors
+- `CONFIG_XRADIO_SDIO=y` — SDIO bus binding (bool)
 
 **Toolchain** (`target/allwinner/a133-aw3/defconfig`)
 - Patches board defconfig to GCC 7.4.1 / binutils 2.28 / glibc 2.29
@@ -127,7 +145,7 @@ install.sh is safe to re-run (all edits are guarded). It applies:
 
 | Package | Reason |
 |---------|--------|
-| `kmod-net-xr829`, `kmod-net-xr829-40M` | xr829 kernel driver; wpa-supplicant/wpa-cli handle WiFi without it |
+| `kmod-net-xr829`, `kmod-net-xr829-40M` | Tina OpenWrt package for xr829; the kernel driver is compiled directly via CONFIG_XR829_WLAN=m/XRADIO=m — this Tina package is redundant |
 | `xr829-firmware`, `xr829-rftest` | same |
 | `kmod-net-rtl8188eu` | USB dongle driver, not built by kernel |
 | all other kmod-net-* | wrong chip |
