@@ -42,6 +42,9 @@ DEV_FB="/root/lichee/lichee/linux-4.9/drivers/video/fbdev/sunxi/disp2/disp/dev_f
 sed -i '72s/dst_image_h\.width;/dst_image_h.height;/' "$FB_G2D"
 sed -i '74s/dst_image_h\.height;/dst_image_h.width;/' "$FB_G2D"
 sed -i 's/FB_ROTATION_HW_0 && degree > FB_ROTATION_HW_270/FB_ROTATION_HW_0 || degree > FB_ROTATION_HW_270/' "$FB_G2D"
+FB_G2D_H="/root/lichee/lichee/linux-4.9/drivers/video/fbdev/sunxi/disp2/disp/fb_g2d_rot.h"
+grep -q 'g2d_opened' "$FB_G2D_H" || \
+    sed -i '/int switch_buffer_flag;/a \\tstruct file g2d_file;\n\tbool g2d_opened;' "$FB_G2D_H"
 apply_patch "$SCRIPT_DIR/patches/006-lazy-g2d-open.patch"  # lazy g2d_open fix
 # Fix stale G2D_RELEASE label in fb_g2d_rot_create() — 006 hunk silently fails vs post-0001 state
 sed -i 's/\tgoto G2D_RELEASE;/\tgoto ERROR;/' "$FB_G2D"
