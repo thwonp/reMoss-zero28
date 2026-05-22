@@ -61,9 +61,9 @@ grep -q 'degree0' device/config/chips/a133/configs/aw3/board.dts \
 grep -q 'disp_rotation_used' device/config/chips/a133/configs/aw3/board.dts \
     && _ok "DTS: disp_rotation_used present" \
     || _fail "DTS: disp_rotation_used missing"
-grep -q 'fb0_width.*480' device/config/chips/a133/configs/aw3/board.dts \
-    && _ok "DTS: fb0_width=480 (portrait)" \
-    || _fail "DTS: fb0_width not 480"
+grep -q 'fb0_width.*640' device/config/chips/a133/configs/aw3/board.dts \
+    && _ok "DTS: fb0_width=640 (landscape)" \
+    || _fail "DTS: fb0_width not 640"
 
 # Kernel board config: G2D + HW rotation (device/config/chips/a133/configs/aw3/linux/config-4.9)
 grep -q 'CONFIG_SUNXI_G2D=y' device/config/chips/a133/configs/aw3/linux/config-4.9 \

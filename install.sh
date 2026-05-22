@@ -208,8 +208,10 @@ sed -i '/name.*=.*bootloader/{n;s/size\s*=\s*512/size         = 2048/}' "$PART_F
 
 # board.dts: enable HW rotation — degree0=1 (90° CW sweep test; DE2 target landscape)
 DTS="/root/lichee/device/config/chips/a133/configs/aw3/board.dts"
+sed -i 's/fb0_width\s*=\s*<[0-9]*>;/fb0_width                = <640>;/' "$DTS"
+sed -i 's/fb0_height\s*=\s*<[0-9]*>;/fb0_height               = <480>;/' "$DTS"
 grep -q "degree0" "$DTS" || \
-    sed -i '/fb0_height\s*=\s*<640>/a \\t\t\tdisp_rotation_used       = <1>;\n\t\t\tdegree0                  = <1>;\n\t\t\tfb0_buffer_num           = <2>;' "$DTS"
+    sed -i '/fb0_height\s*=\s*<480>/a \\t\t\tdisp_rotation_used       = <1>;\n\t\t\tdegree0                  = <1>;\n\t\t\tfb0_buffer_num           = <2>;' "$DTS"
 sed -i 's/degree0\s*=\s*<[0-9]*>;/degree0                  = <1>;/' "$DTS"
 grep -Eq 'degree0[[:space:]]*=[[:space:]]*<1>;' "$DTS" || { echo "ERROR: degree0=<1> not set in $DTS after sed"; exit 1; }
 grep -q "fb0_buffer_num" "$DTS" || \
