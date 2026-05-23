@@ -192,12 +192,6 @@ grep -q "sysmacros" "$E2FS_MK" || \
 grep -q "_GNU_SOURCE" "$E2FS_MK" || \
     sed -i 's/-include sys\/sysmacros\.h/-include sys\/sysmacros.h -D_GNU_SOURCE/' "$E2FS_MK"
 
-# Fix xr829: SUPPORT_EPTA defined unconditionally but epta_stat_dbg_ctrl is
-# only in debug.o (compiled only with CONFIG_XRADIO_DEBUG); tie them together
-XR829_MK="/root/lichee/lichee/linux-4.9/drivers/net/wireless/xr829/wlan/Makefile"
-grep -q 'CONFIG_XRADIO_DEBUG.*SUPPORT_EPTA' "$XR829_MK" || \
-    sed -i 's/^ccflags-y += -DSUPPORT_EPTA$/ccflags-$(CONFIG_XRADIO_DEBUG) += -DSUPPORT_EPTA/' "$XR829_MK"
-
 # Remove broken thirdparty IoT package Makefiles that cause OpenWrt scanner errors
 rm -rf /root/lichee/package/thirdparty/duilite-lib \
        /root/lichee/package/thirdparty/midea-duilite-lib \
@@ -231,14 +225,13 @@ sed -i '/^# CONFIG_SUNXI_DISP2_FB_ROTATION_SUPPORT is not set$/d'             "$
 grep -q "CONFIG_SUNXI_G2D=y"                           "$BCONFIG" || echo "CONFIG_SUNXI_G2D=y"                           >> "$BCONFIG"
 grep -q "CONFIG_SUNXI_G2D_ROTATE=y"                    "$BCONFIG" || echo "CONFIG_SUNXI_G2D_ROTATE=y"                    >> "$BCONFIG"
 grep -q "CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y" "$BCONFIG" || echo "CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y" >> "$BCONFIG"
-# XR829 WiFi — built-in (SDIO bus); sub-symbols invisible in config-4.9 while gate is disabled
-sed -i '/^# CONFIG_XR829_WLAN is not set$/d'  "$BCONFIG"
-grep -q "CONFIG_XR829_WLAN=y"  "$BCONFIG" || echo "CONFIG_XR829_WLAN=y"  >> "$BCONFIG"
-sed -i 's/^CONFIG_XRADIO=y$/CONFIG_XRADIO=m/' "$BCONFIG"
-sed -i 's/^CONFIG_XRMAC=y$/CONFIG_XRMAC=m/'   "$BCONFIG"
-grep -q "CONFIG_XRADIO=" "$BCONFIG" || echo "CONFIG_XRADIO=m" >> "$BCONFIG"
-grep -q "CONFIG_XRADIO_SDIO=y" "$BCONFIG" || echo "CONFIG_XRADIO_SDIO=y" >> "$BCONFIG"
-grep -q "CONFIG_XRMAC="  "$BCONFIG" || echo "CONFIG_XRMAC=m"  >> "$BCONFIG"
+# RTL8189ES is already in the board config-4.9 as =m; disable XRadio entirely
+sed -i '/^CONFIG_XR829_WLAN=y$/d'     "$BCONFIG"
+sed -i '/^CONFIG_XRADIO=/d'           "$BCONFIG"
+sed -i '/^CONFIG_XRADIO_SDIO=y$/d'    "$BCONFIG"
+sed -i '/^CONFIG_XRMAC=/d'            "$BCONFIG"
+grep -q "# CONFIG_XR829_WLAN is not set" "$BCONFIG" || echo "# CONFIG_XR829_WLAN is not set" >> "$BCONFIG"
+grep -q "# CONFIG_XRADIO is not set"     "$BCONFIG" || echo "# CONFIG_XRADIO is not set"     >> "$BCONFIG"
 DEF="/root/lichee/lichee/linux-4.9/arch/arm64/configs/sun50iw10p1smp_defconfig"
 grep -q "CONFIG_NLS_ISO8859_1"               "$DEF" || echo "CONFIG_NLS_ISO8859_1=y"                        >> "$DEF"
 grep -q "CONFIG_NLS_UTF8"                    "$DEF" || echo "CONFIG_NLS_UTF8=y"                             >> "$DEF"
@@ -253,11 +246,7 @@ if [ -f "$KCONFIG" ] && [ -x "$SCRIPTS_CONFIG" ]; then
         --disable SUNXI_DISP2_FB_DISABLE_ROTATE \
         --enable  SUNXI_G2D \
         --enable  SUNXI_G2D_ROTATE \
-        --enable  SUNXI_DISP2_FB_HW_ROTATION_SUPPORT \
-        --enable  XR829_WLAN \
-        --module  XRADIO \
-        --enable  XRADIO_SDIO \
-        --module  XRMAC
+        --enable  SUNXI_DISP2_FB_HW_ROTATION_SUPPORT
     echo "[install.sh] Patched kernel .config via scripts/config"
 fi
 
