@@ -83,11 +83,13 @@ Tina build system.
 - `CONFIG_SUNXI_DISP2_FB_HW_ROTATION_SUPPORT=y`
 - NLS ISO 8859-1, NLS UTF-8, FAT default iocharset=utf8
 
-**XR829 WiFi kernel config** (`config-4.9` + `scripts/config`)
-- `CONFIG_XR829_WLAN=y` — top-level gate (bool, stays built-in)
-- `CONFIG_XRADIO=m` — SDIO driver as module (=y conflicts with built-in mac80211)
-- `CONFIG_XRMAC=m` — XRMAC is a mac80211 fork; both =y causes ieee80211_* linker errors
-- `CONFIG_XRADIO_SDIO=y` — SDIO bus binding (bool)
+**XRadio kernel config disabled** (`config-4.9` + `scripts/config`)
+- Hardware WiFi chip is RTL8189ES, not XRadio. `install.sh` removes any XRadio kernel
+  config from `config-4.9` and appends `# CONFIG_XR829_WLAN is not set` and
+  `# CONFIG_XRADIO is not set`. `CONFIG_RTL8189ES=m` is already present in the board
+  `config-4.9` by default; no patching needed to compile the RTL driver.
+- `moss-tina.config` also sets `# CONFIG_USES_XRADIO is not set` (board metadata flag;
+  prevents Tina package Makefiles from treating XRadio as present hardware).
 
 **Toolchain** (`target/allwinner/a133-aw3/defconfig`)
 - Patches board defconfig to GCC 7.4.1 / binutils 2.28 / glibc 2.29
@@ -125,6 +127,7 @@ Tina build system.
 | `python3` | Portmaster scripts |
 | `wpa-supplicant`, `wpa-cli` | WiFi |
 | `kmod-cfg80211` | base WiFi framework |
+| `kmod-net-rtl8189es` | WiFi chip driver (RTL8189ES) |
 | Target Images → downsize kernel (EXPERIMENTAL) | boot time |
 
 ### Disabled — GUI / Allwinner apps
@@ -145,7 +148,7 @@ Tina build system.
 
 | Package | Reason |
 |---------|--------|
-| `kmod-net-xr829`, `kmod-net-xr829-40M` | Tina OpenWrt package for xr829; the kernel driver is compiled directly via CONFIG_XR829_WLAN=m/XRADIO=m — this Tina package is redundant |
+| `kmod-net-xr829`, `kmod-net-xr829-40M` | wrong chip (RTL8189ES is the hardware); XRadio kernel config is also explicitly disabled by install.sh |
 | `xr829-firmware`, `xr829-rftest` | same |
 | `kmod-net-rtl8188eu` | USB dongle driver, not built by kernel |
 | all other kmod-net-* | wrong chip |
